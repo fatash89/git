@@ -447,7 +447,8 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 
 		if (lmode && status != 'C') {
 			if (checkout_path(lmode, &loid, src_path, &lstate)) {
-				ret = error("could not write '%s'", src_path);
+				ret = 1;
+				error("could not write '%s'", src_path);
 				goto finish;
 			}
 		}
@@ -468,8 +469,8 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 			if (!use_wt_file(workdir, dst_path, &roid)) {
 				if (checkout_path(rmode, &roid, dst_path,
 						  &rstate)) {
-					ret = error("could not write '%s'",
-						    dst_path);
+					ret = 1;
+					error("could not write '%s'", dst_path);
 					goto finish;
 				}
 			} else if (!is_null_oid(&roid)) {
@@ -487,15 +488,16 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 
 				add_path(&rdir, rdir_len, dst_path);
 				if (ensure_leading_directories(rdir.buf)) {
-					ret = error("could not create "
-						    "directory for '%s'",
-						    dst_path);
+					ret = 1;
+					error("could not create directory for '%s'",
+						dst_path);
 					goto finish;
 				}
 				add_path(&wtdir, wtdir_len, dst_path);
 				if (symlinks) {
 					if (symlink(wtdir.buf, rdir.buf)) {
-						ret = error_errno("could not symlink '%s' to '%s'", wtdir.buf, rdir.buf);
+						ret = 1;
+						error_errno("could not symlink '%s' to '%s'", wtdir.buf, rdir.buf);
 						goto finish;
 					}
 				} else {
@@ -504,7 +506,8 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 						st.st_mode = 0644;
 					if (copy_file(rdir.buf, wtdir.buf,
 						      st.st_mode)) {
-						ret = error("could not copy '%s' to '%s'", wtdir.buf, rdir.buf);
+						ret = 1;
+						error("could not copy '%s' to '%s'", wtdir.buf, rdir.buf);
 						goto finish;
 					}
 				}
@@ -515,7 +518,8 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 	fclose(fp);
 	fp = NULL;
 	if (finish_command(child)) {
-		ret = error("error occurred running diff --raw");
+		ret = 1;
+		error("error occurred running diff --raw");
 		goto finish;
 	}
 
