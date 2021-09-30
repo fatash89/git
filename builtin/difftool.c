@@ -320,6 +320,17 @@ static int checkout_path(unsigned mode, struct object_id *oid,
 	return ret;
 }
 
+static void write_entry(const char *path, const char *content,
+			struct strbuf *buf, size_t len)
+{
+	if (!*content)
+		return;
+	add_path(buf, len, path);
+	ensure_leading_directories(buf->buf);
+	unlink(buf->buf);
+	write_file(buf->buf, "%s", content);
+}
+
 static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 			struct child_process *child)
 {
@@ -533,16 +544,8 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 	 */
 	hashmap_for_each_entry(&submodules, &iter, entry,
 				entry /* member name */) {
-		if (*entry->left) {
-			add_path(&ldir, ldir_len, entry->path);
-			ensure_leading_directories(ldir.buf);
-			write_file(ldir.buf, "%s", entry->left);
-		}
-		if (*entry->right) {
-			add_path(&rdir, rdir_len, entry->path);
-			ensure_leading_directories(rdir.buf);
-			write_file(rdir.buf, "%s", entry->right);
-		}
+		write_entry(entry->path, entry->left, &ldir, ldir_len);
+		write_entry(entry->path, entry->right, &rdir, rdir_len);
 	}
 
 	/*
@@ -552,18 +555,9 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 	 */
 	hashmap_for_each_entry(&symlinks2, &iter, entry,
 				entry /* member name */) {
-		if (*entry->left) {
-			add_path(&ldir, ldir_len, entry->path);
-			ensure_leading_directories(ldir.buf);
-			unlink(ldir.buf);
-			write_file(ldir.buf, "%s", entry->left);
-		}
-		if (*entry->right) {
-			add_path(&rdir, rdir_len, entry->path);
-			ensure_leading_directories(rdir.buf);
-			unlink(rdir.buf);
-			write_file(rdir.buf, "%s", entry->right);
-		}
+
+		write_entry(entry->path, entry->left, &ldir, ldir_len);
+		write_entry(entry->path, entry->right, &rdir, rdir_len);
 	}
 
 	strbuf_release(&buf);
