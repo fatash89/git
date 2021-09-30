@@ -560,8 +560,6 @@ static int run_dir_diff(const char *extcmd, int symlinks, const char *prefix,
 		write_entry(entry->path, entry->right, &rdir, rdir_len);
 	}
 
-	strbuf_release(&buf);
-
 	strbuf_setlen(&ldir, ldir_len);
 	helper_argv[1] = ldir.buf;
 	strbuf_setlen(&rdir, rdir_len);
